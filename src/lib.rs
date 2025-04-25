@@ -34,13 +34,11 @@ pub mod properties;
 pub mod prelude {
     #[cfg(feature = "debug")]
     pub use super::debug::prelude::*;
-    pub use super::map::prelude::*;
-    pub use super::names::*;
     #[cfg(feature = "physics")]
     pub use super::physics::prelude::*;
-    pub use super::world::prelude::*;
-    pub use crate::TiledMapPlugin;
-    pub use crate::TiledMapPluginConfig;
+    pub use super::{map::prelude::*, names::*, world::prelude::*};
+    pub use crate::{TiledMapPlugin, TiledMapPluginConfig};
+    pub use bevy_ecs_tilemap::prelude::{TilePos, TilemapAnchor, TilemapGridSize, TilemapSize};
 }
 
 use crate::prelude::*;

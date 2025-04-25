@@ -22,12 +22,9 @@ use prelude::*;
 pub mod prelude {
     #[cfg(feature = "avian")]
     pub use super::avian::*;
-    pub use super::collider::*;
     #[cfg(feature = "rapier")]
     pub use super::rapier::*;
-    pub use super::TiledPhysicsBackend;
-    pub use super::TiledPhysicsPlugin;
-    pub use super::TiledPhysicsSettings;
+    pub use super::{collider::*, TiledPhysicsBackend, TiledPhysicsPlugin, TiledPhysicsSettings};
 }
 
 /// Physics backend public trait.
@@ -55,6 +52,7 @@ pub trait TiledPhysicsBackend:
         tiled_map: &TiledMap,
         filter: &TiledNameFilter,
         collider: &TiledCollider,
+        anchor: &TilemapAnchor,
     ) -> Vec<TiledColliderSpawnInfos>;
 }
 
@@ -137,7 +135,7 @@ fn initialize_settings_for_worlds<T: TiledPhysicsBackend>(
 fn initialize_settings_for_maps<T: TiledPhysicsBackend>(
     mut commands: Commands,
     maps_query: Query<
-        (Entity, Option<&Parent>),
+        (Entity, Option<&ChildOf>),
         (With<TiledMapMarker>, Without<TiledPhysicsSettings<T>>),
     >,
     worlds_query: Query<&TiledPhysicsSettings<T>, With<TiledWorldMarker>>,
@@ -145,7 +143,7 @@ fn initialize_settings_for_maps<T: TiledPhysicsBackend>(
     for (map, parent) in maps_query.iter() {
         commands.entity(map).insert(
             parent
-                .and_then(|world| worlds_query.get(world.get()).ok())
+                .and_then(|world| worlds_query.get(world.parent()).ok())
                 .cloned()
                 .unwrap_or_default(),
         );
@@ -175,14 +173,14 @@ fn collider_from_tiles_layer<T: TiledPhysicsBackend>(
     mut layer_event: EventReader<TiledLayerCreated>,
     mut commands: Commands,
     map_asset: Res<Assets<TiledMap>>,
-    maps_query: Query<&TiledPhysicsSettings<T>, With<TiledMapMarker>>,
+    maps_query: Query<(&TiledPhysicsSettings<T>, &TilemapAnchor), With<TiledMapMarker>>,
 ) {
     for ev in layer_event.read() {
         debug!(
             "map entity = {:?}, layer entity = {:?}",
             ev.map.entity, ev.entity
         );
-        let settings = maps_query
+        let (settings, anchor) = maps_query
             .get(ev.map.entity)
             .expect("TiledPhysicsSettings<T> component should be on map entity");
         let Some(tiled_map) = ev.map.get_map_asset(&map_asset) else {
@@ -203,6 +201,7 @@ fn collider_from_tiles_layer<T: TiledPhysicsBackend>(
                 tiled_map,
                 &settings.tiles_objects_filter,
                 &TiledCollider::from_tiles_layer(ev.id),
+                anchor,
             );
         }
     }
@@ -213,10 +212,10 @@ fn collider_from_object<T: TiledPhysicsBackend>(
     mut object_event: EventReader<TiledObjectCreated>,
     mut commands: Commands,
     map_asset: Res<Assets<TiledMap>>,
-    maps_query: Query<&TiledPhysicsSettings<T>, With<TiledMapMarker>>,
+    maps_query: Query<(&TiledPhysicsSettings<T>, &TilemapAnchor), With<TiledMapMarker>>,
 ) {
     for ev in object_event.read() {
-        let settings = maps_query
+        let (settings, anchor) = maps_query
             .get(ev.layer.map.entity)
             .expect("TiledPhysicsSettings<T> component should be on map entity");
         let Some(tiled_map) = ev.layer.map.get_map_asset(&map_asset) else {
@@ -242,6 +241,7 @@ fn collider_from_object<T: TiledPhysicsBackend>(
                     None => &TiledName::All,
                 },
                 &TiledCollider::from_object(ev.layer.id, ev.id),
+                anchor,
             );
         }
     }

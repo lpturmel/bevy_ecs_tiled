@@ -8,11 +8,7 @@ pub mod utils;
 
 /// `bevy_ecs_tiled` map related public exports
 pub mod prelude {
-    pub use super::asset::*;
-    pub use super::components::*;
-    pub use super::events::*;
-    pub use super::utils::*;
-    pub use super::TiledMapHandle;
+    pub use super::{asset::*, components::*, events::*, utils::*, TiledMapHandle};
 }
 
 use crate::{cache::TiledResourceCache, prelude::*};
@@ -84,6 +80,7 @@ fn export_types(reg: Res<AppTypeRegistry>, config: Res<TiledMapPluginConfig>) {
 
 /// System to spawn a map once it has been fully loaded.
 #[allow(clippy::type_complexity)]
+#[allow(clippy::type_complexity)]
 pub(crate) fn process_loaded_maps(
     asset_server: Res<AssetServer>,
     mut commands: Commands,
@@ -94,12 +91,12 @@ pub(crate) fn process_loaded_maps(
             &TiledMapHandle,
             &mut TiledMapStorage,
             &TilemapRenderSettings,
-            &TiledMapAnchor,
+            &TilemapAnchor,
             &TiledMapLayerZOffset,
         ),
         Or<(
             Changed<TiledMapHandle>,
-            Changed<TiledMapAnchor>,
+            Changed<TilemapAnchor>,
             Changed<TiledMapLayerZOffset>,
             Changed<TilemapRenderSettings>,
             With<RespawnTiledMap>,
@@ -117,7 +114,7 @@ pub(crate) fn process_loaded_maps(
                         "Map failed to load, despawn it (handle = {:?})",
                         map_handle.0
                     );
-                    commands.entity(map_entity).despawn_recursive();
+                    commands.entity(map_entity).despawn();
                 } else {
                     debug!(
                         "Map is not fully loaded yet, will try again next frame (handle = {:?})",
@@ -131,7 +128,7 @@ pub(crate) fn process_loaded_maps(
             // Map should be loaded at this point
             let Some(tiled_map) = maps.get(&map_handle.0) else {
                 error!("Cannot get a valid TiledMap out of Handle<TiledMap>: has the last strong reference to the asset been dropped ? (handle = {:?})", map_handle.0);
-                commands.entity(map_entity).despawn_recursive();
+                commands.entity(map_entity).despawn();
                 continue;
             };
 
@@ -149,10 +146,10 @@ pub(crate) fn process_loaded_maps(
                 tiled_map,
                 &mut tiled_id_storage,
                 render_settings,
-                anchor,
                 layer_offset,
                 &asset_server,
                 &mut event_writers,
+                anchor,
             );
 
             // Remove the respawn marker
@@ -187,7 +184,7 @@ fn handle_map_events(
                 info!("Map removed: {id}");
                 for (map_entity, map_handle) in map_query.iter() {
                     if map_handle.0.id() == *id {
-                        commands.entity(map_entity).despawn_recursive();
+                        commands.entity(map_entity).despawn();
                     }
                 }
             }
@@ -198,7 +195,7 @@ fn handle_map_events(
 
 fn remove_layers(commands: &mut Commands, tiled_id_storage: &mut TiledMapStorage) {
     for layer_entity in tiled_id_storage.layers.values() {
-        commands.entity(*layer_entity).despawn_recursive();
+        commands.entity(*layer_entity).despawn();
     }
     tiled_id_storage.layers.clear();
     tiled_id_storage.objects.clear();

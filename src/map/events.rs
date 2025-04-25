@@ -40,7 +40,7 @@ pub struct TiledMapCreated {
 }
 
 impl Event for TiledMapCreated {
-    type Traversal = &'static Parent;
+    type Traversal = &'static ChildOf;
     const AUTO_PROPAGATE: bool = true;
 }
 
@@ -69,7 +69,7 @@ pub struct TiledLayerCreated {
 }
 
 impl Event for TiledLayerCreated {
-    type Traversal = &'static Parent;
+    type Traversal = &'static ChildOf;
     const AUTO_PROPAGATE: bool = true;
 }
 
@@ -95,7 +95,7 @@ pub struct TiledObjectCreated {
 }
 
 impl Event for TiledObjectCreated {
-    type Traversal = &'static Parent;
+    type Traversal = &'static ChildOf;
     const AUTO_PROPAGATE: bool = true;
 }
 
@@ -141,7 +141,7 @@ pub struct TiledTileCreated {
 }
 
 impl Event for TiledTileCreated {
-    type Traversal = &'static Parent;
+    type Traversal = &'static ChildOf;
     const AUTO_PROPAGATE: bool = true;
 }
 
@@ -155,10 +155,21 @@ impl<'a> TiledTileCreated {
     }
 
     /// Retrieve tile world position (origin = tile center) relative to its parent layer.
-    pub fn world_position(&self, map_asset: &'a Res<Assets<TiledMap>>) -> Option<Vec2> {
-        self.layer.map.get_map(map_asset).map(|map| {
-            self.position
-                .center_in_world(&get_grid_size(map), &get_map_type(map))
+    pub fn world_position(
+        &self,
+        map_asset: &'a Res<Assets<TiledMap>>,
+        anchor: &TilemapAnchor,
+    ) -> Option<Vec2> {
+        self.layer.map.get_map_asset(map_asset).map(|tiled_map| {
+            let grid_size = get_grid_size(&tiled_map.map);
+            let tile_size = tile_size_from_grid(&grid_size);
+            self.position.center_in_world(
+                &tiled_map.tilemap_size,
+                &grid_size,
+                &tile_size,
+                &get_map_type(&tiled_map.map),
+                anchor,
+            )
         })
     }
 }

@@ -3,6 +3,7 @@
 //! Only available when the `avian` feature is enabled.
 
 use avian2d::{
+    collision::collider::EllipseColliderShape,
     parry::{
         math::{Isometry, Real},
         shape::SharedShape,
@@ -36,6 +37,7 @@ impl TiledPhysicsBackend for TiledPhysicsAvianBackend {
         tiled_map: &TiledMap,
         filter: &TiledNameFilter,
         collider: &TiledCollider,
+        anchor: &TilemapAnchor,
     ) -> Vec<TiledColliderSpawnInfos> {
         match collider {
             TiledCollider::Object {
@@ -89,7 +91,7 @@ impl TiledPhysicsBackend for TiledPhysicsAvianBackend {
             TiledCollider::TilesLayer { layer_id: _ } => {
                 let mut composables = vec![];
                 let mut spawn_infos = vec![];
-                for (tile_position, tile) in collider.get_tiles(tiled_map) {
+                for (tile_position, tile) in collider.get_tiles(tiled_map, anchor) {
                     if let Some(collision) = &tile.collision {
                         compose_tiles(
                             commands,

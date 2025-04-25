@@ -6,10 +6,7 @@ pub mod events;
 
 /// `bevy_ecs_tiled` world related public exports
 pub mod prelude {
-    pub use super::asset::*;
-    pub use super::components::*;
-    pub use super::events::*;
-    pub use super::TiledWorldHandle;
+    pub use super::{asset::*, components::*, events::*, TiledWorldHandle};
 }
 
 use crate::prelude::*;
@@ -148,7 +145,7 @@ fn world_chunking(
         for idx in to_remove {
             if let Some(map_entity) = storage.spawned_maps.remove(&idx) {
                 debug!("Despawn map (index = {}, entity = {:?})", idx, map_entity);
-                commands.entity(map_entity).despawn_recursive();
+                commands.entity(map_entity).despawn();
             }
         }
 
@@ -165,8 +162,8 @@ fn world_chunking(
                     TiledMapAnchor::BottomLeft,
                     *layer_offset,
                     *render_settings,
+                    ChildOf(world_entity),
                 ))
-                .set_parent(world_entity)
                 .id();
             debug!(
                 "Spawn map (index = {}, handle = {:?},  entity = {:?})",
@@ -207,7 +204,7 @@ fn process_loaded_worlds(
                         "World failed to load, despawn it (handle = {:?} / entity = {:?})",
                         world_handle.0, world_entity
                     );
-                    commands.entity(world_entity).despawn_recursive();
+                    commands.entity(world_entity).despawn();
                 } else {
                     // If not fully loaded yet, insert the 'Respawn' marker so we will try to load it at next frame
                     debug!(
@@ -222,7 +219,7 @@ fn process_loaded_worlds(
             // World should be loaded at this point
             let Some(tiled_world) = worlds.get(&world_handle.0) else {
                 error!("Cannot get a valid TiledWorld out of Handle<TiledWorld>: has the last strong reference to the asset been dropped ? (handle = {:?} / entity = {:?})", world_handle.0, world_entity);
-                commands.entity(world_entity).despawn_recursive();
+                commands.entity(world_entity).despawn();
                 continue;
             };
 
@@ -251,7 +248,7 @@ fn process_loaded_worlds(
                 asset_id: world_handle.0.id(),
             };
             commands.trigger_targets(event, world_entity);
-            world_event.send(event);
+            world_event.write(event);
         }
     }
 }
@@ -276,7 +273,7 @@ fn handle_world_events(
                 info!("World removed: {id}");
                 for (world_entity, world_handle) in world_query.iter() {
                     if world_handle.0.id() == *id {
-                        commands.entity(world_entity).despawn_recursive();
+                        commands.entity(world_entity).despawn();
                     }
                 }
             }
@@ -287,7 +284,7 @@ fn handle_world_events(
 
 fn remove_maps(commands: &mut Commands, world_storage: &mut TiledWorldStorage) {
     for (_, map_entity) in world_storage.spawned_maps.iter() {
-        commands.entity(*map_entity).despawn_recursive();
+        commands.entity(*map_entity).despawn();
     }
     world_storage.spawned_maps.clear();
 }

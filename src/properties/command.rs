@@ -1,9 +1,9 @@
 use super::load::DeserializedProperties;
-use bevy::ecs::reflect::ReflectBundle;
-use bevy::ecs::system::EntityCommands;
-use bevy::ecs::world::Command;
-use bevy::prelude::{AppTypeRegistry, Entity, ReflectComponent, ReflectResource, World};
-use bevy::reflect::{PartialReflect, TypeRegistry};
+use bevy::{
+    ecs::{reflect::ReflectBundle, system::EntityCommands},
+    prelude::{AppTypeRegistry, Command, Entity, ReflectComponent, ReflectResource, World},
+    reflect::{PartialReflect, TypeRegistry},
+};
 use std::ops::Deref;
 
 pub(crate) trait PropertiesCommandExt {
